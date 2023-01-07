@@ -48,11 +48,10 @@ get_filename_component(APP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/" ABSOLUTE)
 
 include("${CINDER_PATH}/proj/cmake/modules/cinderMakeApp.cmake")
 
-#list(APPEND ENGINE_SOURCE_FILES src/engine/board.cc src/engine/tile.cc src/engine/main_menu_engine.cpp
-#                                src/engine/board_game_engine.cc src/engine/pause_menu_engine.cpp src/engine/character.cc
-#                                src/engine/level_select_menu_engine.cpp)
+list(APPEND ENGINE_SOURCE_FILES src/engine/unit.cc src/engine/game_state.cc src/engine/ai_controller.cc
+                                src/engine/player_controler.cc src/engine/battle_engine.cc)
 
-list(APPEND GUI_SOURCE_FILES src/gui/jjba_strategy_app.cc)
+list(APPEND GUI_SOURCE_FILES src/gui/age_of_jojo.cc)
 
 #list(APPEND TEST_FILES tests/board_tests.cc tests/character_tests.cc tests/game_engine_tests.cc)
 

@@ -1,4 +1,5 @@
-#include "gui/jjba_strategy_app.h"
+#include "gui/age_of_jojo.h"
+#include "engine/styles.h"
 #include <sstream>
 #include <algorithm>
 //#include "gui/board_game_renderer.h"
@@ -6,9 +7,9 @@
 //#include "gui/main_menu_renderer.h"
 //#include "gui/level_select_menu_renderer.h"
 
-namespace jjba_strategy {
+namespace age_of_jojo {
 
-JJBAStrategyApp::JJBAStrategyApp() {
+AgeOfJojo::AgeOfJojo() : battle_engine_(BattleEngine()) {
 //  render_engines_.emplace(std::make_pair(GameState::kMainMenu, new MainMenuRenderer()));
 //  render_engines_.emplace(std::make_pair(GameState::kPauseMenu, new PauseMenuRenderer()));
 //  render_engines_.emplace(std::make_pair(GameState::kPlayingBoard, new BoardGameRenderer()));
@@ -35,7 +36,7 @@ JJBAStrategyApp::JJBAStrategyApp() {
 
 // TODO look into memory leak
 
-void JJBAStrategyApp::update() {
+void AgeOfJojo::update() {
 //  if (!music_player_->isPlaying() && options::play_music) {
 //    PlayRandomSong();
 //  }
@@ -50,40 +51,41 @@ void JJBAStrategyApp::update() {
 //  }
 
 //  current_render_engine_->Update();
-  if (moving_ball_coords_.x > kWindowSize_) {
-    is_moving_right_ = false;
-  } else if (moving_ball_coords_.x < 0) {
-    is_moving_right_ = true;
-  }
-
-  if (is_moving_right_) {
-    moving_ball_coords_.x += 10;
-  } else {
-    moving_ball_coords_.x -= 10;
-  }
+  UpdateFPSBall();
 
   float margin = kWindowSize_ / 5;
   float camera_speed = 60.0f;
-  if (mouse_coords_.x > kWindowSize_ - margin && top_right_corner_.x < 2000 - kWindowSize_) {
-    top_right_corner_.x += mouse_coords_.x / camera_speed;
+  if (mouse_coords_.x > kWindowSize_ - margin && top_right_corner_.x > -kBackgroundHorizontal_ + kWindowSize_) {
+    top_right_corner_.x -= mouse_coords_.x / camera_speed;
   }
-  if (mouse_coords_.x < margin && top_right_corner_.x > 0) {
-    top_right_corner_.x -= (kWindowSize_ - mouse_coords_.x) / camera_speed;
+  if (mouse_coords_.x < margin && top_right_corner_.x < 0) {
+    top_right_corner_.x += (kWindowSize_ - mouse_coords_.x) / camera_speed;
   }
+
+  battle_engine_.HandlePlayer2Input(top_right_corner_);
+  battle_engine_.UpdateUnitPositions(top_right_corner_);
 }
 
-void JJBAStrategyApp::draw() {
+void AgeOfJojo::draw() {
   ci::gl::clear(ci::Color("black"));
 
   ci::gl::color(ci::Color("white"));
-  ci::gl::draw(background_, ci::Rectf(-top_right_corner_.x, top_right_corner_.y, 2000 - top_right_corner_.x, 900 + top_right_corner_.y));
+  ci::gl::draw(background_, ci::Rectf(top_right_corner_.x,
+                                      top_right_corner_.y,
+                                      styles::kBackgroundLength_ + top_right_corner_.x,
+                                      styles::kBackgroundHeight_ + top_right_corner_.y));
 
-  ci::gl::color(ci::Color("purple"));
-  ci::gl::drawSolidCircle(moving_ball_coords_, 30);
+
+//  DebugScreen();
+  battle_engine_.RenderAllUnits(top_right_corner_);
+  battle_engine_.RenderBases(top_right_corner_);
 }
 
+void AgeOfJojo::keyDown(ci::app::KeyEvent event) {
+  battle_engine_.HandlePlayer1Input(event, top_right_corner_);
+}
 
-void JJBAStrategyApp::mouseMove(ci::app::MouseEvent event) {
+void AgeOfJojo::mouseMove(ci::app::MouseEvent event) {
   mouse_coords_ = event.getPos();
 
   float margin_of_error = 3; // to avoid divide by 0 errors
@@ -95,7 +97,7 @@ void JJBAStrategyApp::mouseMove(ci::app::MouseEvent event) {
   }
 }
 
-void JJBAStrategyApp::PlaySound(const std::string& file_path) {
+void AgeOfJojo::PlaySound(const std::string& file_path) {
 //  if (options::play_sounds) {
 //    ci::audio::SourceFileRef source = ci::audio::load(ci::app::loadAsset(file_path));
 //    sound_player_ = ci::audio::Voice::create(source);
@@ -103,7 +105,7 @@ void JJBAStrategyApp::PlaySound(const std::string& file_path) {
 //  }
 }
 
-void JJBAStrategyApp::PlayMusic(const std::string& file_path) {
+void AgeOfJojo::PlayMusic(const std::string& file_path) {
 //  if (options::play_music) {
 //    ci::audio::SourceFileRef source = ci::audio::load(ci::app::loadAsset(file_path));
 //    music_player_ = ci::audio::Voice::create(source);
@@ -111,7 +113,7 @@ void JJBAStrategyApp::PlayMusic(const std::string& file_path) {
 //  }
 }
 
-void JJBAStrategyApp::PlayRandomSong() {
+void AgeOfJojo::PlayRandomSong() {
 //  std::random_device r;
 //
 //  std::default_random_engine e1(r());
@@ -120,6 +122,53 @@ void JJBAStrategyApp::PlayRandomSong() {
 //
 //  std::string file_path = kSongNames_[random_index];
 //  PlayMusic(file_path);
+}
+
+void AgeOfJojo::UpdateFPSBall() {
+  if (moving_ball_coords_.x > kBackgroundHorizontal_) {
+    is_moving_right_ = false;
+  } else if (moving_ball_coords_.x < 0) {
+    is_moving_right_ = true;
+  }
+
+  if (is_moving_right_) {
+    moving_ball_coords_.x += 10;
+  } else {
+    moving_ball_coords_.x -= 10;
+  }
+}
+
+void AgeOfJojo::DebugScreen() const {
+  std::ostringstream ss;
+  ss << "(" << top_right_corner_.x << ", " << top_right_corner_.y << ")";
+  std::string s(ss.str());
+
+  ci::gl::drawStringCentered(s,
+                             glm::vec2(300, 100),
+                             ci::Color("pink"),
+                             ci::Font("Helvetica", 60));
+
+  std::ostringstream sss;
+  sss << "(" << mouse_coords_.x << ", " << mouse_coords_.y << ")";
+  std::string s2(sss.str());
+
+  ci::gl::drawStringCentered(s2,
+                             glm::vec2(300, 200),
+                             ci::Color("pink"),
+                             ci::Font("Helvetica", 60));
+
+  std::ostringstream ssss;
+  ssss << "(" << moving_ball_coords_.x << ", " << moving_ball_coords_.y << ")";
+  std::string s3(ssss.str());
+
+  ci::gl::drawStringCentered(s3,
+                             glm::vec2(300, 300),
+                             ci::Color("pink"),
+                             ci::Font("Helvetica", 60));
+
+  ci::gl::color(ci::Color("purple"));
+  glm::vec2 update_coords(moving_ball_coords_.x + top_right_corner_.x, moving_ball_coords_.y);
+  ci::gl::drawSolidCircle(update_coords, 30);
 }
 
 }  // namespace jjba_strategy

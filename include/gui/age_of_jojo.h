@@ -3,20 +3,21 @@
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
 #include "cinder/audio/Voice.h"
+#include "engine/battle_engine.h"
 //#include "gui/renderer.h"
 #include <unordered_map>
 
-namespace jjba_strategy {
+namespace age_of_jojo {
 
 /**
  * Allows a user to visualize particle collisions in an ideal system
  */
-class JJBAStrategyApp : public ci::app::App {
+class AgeOfJojo : public ci::app::App {
  public:
   /**
    * Instantiates App
    */
-  JJBAStrategyApp();
+  AgeOfJojo();
 
   /**
    * Draws the state of the board
@@ -29,13 +30,22 @@ class JJBAStrategyApp : public ci::app::App {
   void update() override;
 
   /**
-   * Calls methods depending on which key is pressed
-   * @param event object containing pressed key
+   * Calls methods depending on where mouse is
+   * @param event data on mouse placement
    */
   void mouseMove(ci::app::MouseEvent event) override;
 
+  /**
+   * Calls methods depending on which key is pressed
+   * @param event object containing pressed key
+   */
+  void keyDown(ci::app::KeyEvent event) override;
+
 //  const float kWindowSize_ = style::kWindowSize;
   const float kWindowSize_ = 900;
+  const float kBackgroundHorizontal_ = 2000;
+  const float kBackgroundVertical_ = 900;
+  const float kBaseLength_ = 100;
 
 //  const std::string kBoardsFolderPath_ = global_consts::kBoardsFolderPath;
 
@@ -45,12 +55,17 @@ class JJBAStrategyApp : public ci::app::App {
   bool is_moving_right_;
   ci::gl::TextureRef background_;
   glm::vec2 mouse_coords_;
+  BattleEngine battle_engine_;
 
   /**
  * Plays specified song
  * @param file_path path to song file
  */
   void PlaySound(const std::string& file_path);
+
+  void DebugScreen() const;
+
+  void UpdateFPSBall();
 
   /**
    * Plays specified song
@@ -85,5 +100,5 @@ class JJBAStrategyApp : public ci::app::App {
   std::vector<std::string> kSongNames_;
 };
 
-}  // namespace jjba_strategy
+}
 
