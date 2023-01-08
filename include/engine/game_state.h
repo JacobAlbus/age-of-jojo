@@ -53,10 +53,30 @@ class GameState {
   void UpdatePositions(const glm::vec2& top_right_corner,
                        const ci::Rectf& jojo_base_coords, const ci::Rectf& dio_base_coords);
 
-  bool CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
+  /**
+   * Checks for and removes dead players, maintains order of units
+   */
+  void RemoveDeadUnits();
 
+  /**
+   * Update healths of units from attacks
+   * @param top_right_corner coordinates of top right corner of map
+   */
+  void UpdateUnitsHealth(const glm::vec2& top_right_corner);
+
+  void UpdateBaseHealth(float attack_power, bool is_attack_jojo_base);
+
+  void UpdateCanUnitAttack(const glm::vec2& top_right_corner,
+                           const ci::Rectf& jojo_base_coords, const ci::Rectf& dio_base_coords);
 
  private:
+
+  bool CheckEnemyCollision(const Unit& unit, const glm::vec2& top_right_corner) const;
+
+  bool CheckAlliedCollision(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
+
+  bool CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
+
   std::vector<std::pair<Unit, int>> jojo_units_;
   float jojo_health_;
 

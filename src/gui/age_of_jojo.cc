@@ -62,8 +62,7 @@ void AgeOfJojo::update() {
     top_right_corner_.x += (kWindowSize_ - mouse_coords_.x) / camera_speed;
   }
 
-  battle_engine_.HandlePlayer2Input(top_right_corner_);
-  battle_engine_.UpdateUnitPositions(top_right_corner_);
+  battle_engine_.UpdateGameState(top_right_corner_);
 }
 
 void AgeOfJojo::draw() {
@@ -74,7 +73,6 @@ void AgeOfJojo::draw() {
                                       top_right_corner_.y,
                                       styles::kBackgroundLength_ + top_right_corner_.x,
                                       styles::kBackgroundHeight_ + top_right_corner_.y));
-
 
 //  DebugScreen();
   battle_engine_.RenderAllUnits(top_right_corner_);
