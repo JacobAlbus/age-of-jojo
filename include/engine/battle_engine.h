@@ -4,6 +4,7 @@
 #include "engine/game_state.h"
 #include "engine/base_controller.h"
 #include "cinder/app/App.h"
+#include <unordered_map>
 //#include "engine/player_controller.h"
 //#include "engine/ai_controller.h"
 
@@ -13,12 +14,13 @@ class BattleEngine {
  public:
 
   BattleEngine();
-  /**
-   * Perform actions for player 1
-   * @param event key being pressed down
-   * @param top_right_corner coordinates of top right corner of map
-   */
-  void HandlePlayer1Input(const ci::app::KeyEvent& event, const glm::vec2& top_right_corner);
+
+  BattleEngine(const BattleEngine& src);
+
+  ~BattleEngine();
+
+  BattleEngine& operator=(const BattleEngine& rhs);
+
 
   /**
    * Updates state of game every frame
@@ -37,7 +39,21 @@ class BattleEngine {
    */
   void RenderBases(const glm::vec2& top_right_corner) const;
 
-  inline const GameState& GetGameState() const { return game_state_; };
+  /**
+   * Handles mouse click
+   * @param event data on mouse placement
+   */
+  void HandleMouseClick(const ci::app::MouseEvent& event);
+
+  void RenderPlayer1HUD() const;
+
+  void HandleKeyDown(const ci::app::KeyEvent& event, const glm::vec2& top_right_corner);
+
+  void RenderPlayer1Queue(const glm::vec2& top_right_corner) const;
+
+  GameMode GetGameMode() const;
+
+  void RestartGame();
 
  private:
   /**
@@ -45,6 +61,8 @@ class BattleEngine {
    * @param top_right_corner coordinates of top right corner of map
    */
   void UpdateUnitPositions(const glm::vec2& top_right_corner);
+
+  bool CannotBuildUnit(ControllerAction player_action, bool is_team_jojo) const;
 
   /**
    * Update healths of units from attacks
@@ -57,11 +75,19 @@ class BattleEngine {
    */
   void RemoveDeadUnits();
 
+  float GetMaxBaseHealth(Era era) const;
+
   /**
    * Perform actions for player 2
    * @param top_right_corner coordinates of top right corner of map
    */
   void HandlePlayer2Input(const glm::vec2& top_right_corner);
+
+  /**
+   * Perform actions for player 1
+   * @param top_right_corner coordinates of top right corner of map
+   */
+  void HandlePlayer1Input(const glm::vec2& top_right_corner);
 
   /**
    * Updates base of health after getting attacked
@@ -71,6 +97,9 @@ class BattleEngine {
   BaseController* player1_controller_;
   BaseController* player2_controller_;
   GameState game_state_;
+
+  std::unordered_map<std::string, ci::gl::TextureRef> hud_images_;
+  const std::unordered_map<Era, std::unordered_map<UnitType, int>> kUnitCosts_;
 };
 
 }

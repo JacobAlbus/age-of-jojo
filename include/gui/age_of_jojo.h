@@ -9,9 +9,6 @@
 
 namespace age_of_jojo {
 
-/**
- * Allows a user to visualize particle collisions in an ideal system
- */
 class AgeOfJojo : public ci::app::App {
  public:
   /**
@@ -36,18 +33,13 @@ class AgeOfJojo : public ci::app::App {
   void mouseMove(ci::app::MouseEvent event) override;
 
   /**
-   * Calls methods depending on which key is pressed
-   * @param event object containing pressed key
+   * Handles when mouse is clicked
+   * @param event data on mouse placement
    */
+  void mouseDown(ci::app::MouseEvent event) override;
+
   void keyDown(ci::app::KeyEvent event) override;
 
-//  const float kWindowSize_ = style::kWindowSize;
-  const float kWindowSize_ = 900;
-  const float kBackgroundHorizontal_ = 2000;
-  const float kBackgroundVertical_ = 900;
-  const float kBaseLength_ = 100;
-
-//  const std::string kBoardsFolderPath_ = global_consts::kBoardsFolderPath;
 
  private:
   glm::vec2 top_right_corner_;
@@ -56,12 +48,21 @@ class AgeOfJojo : public ci::app::App {
   ci::gl::TextureRef background_;
   glm::vec2 mouse_coords_;
   BattleEngine battle_engine_;
+  GameMode game_mode_;
 
   /**
  * Plays specified song
  * @param file_path path to song file
  */
   void PlaySound(const std::string& file_path);
+
+  void RestartGame();
+
+  void DisplayWinScreen();
+
+  void UpdateGame();
+
+  void DrawGame();
 
   void DebugScreen() const;
 
@@ -78,17 +79,6 @@ class AgeOfJojo : public ci::app::App {
    */
   void PlayRandomSong();
 
-  /**
-   * @kWindowSize_ : represents height and width of cinder app window
-   * @render_engine_ : contains the Renderer objects with their corresponding GameState enum's as keys
-   * @current_render_engine_ : renderer object currently being used
-   * @current_game_state_ : GameState enum indicating which renderer object to use
-   * @previous_loaded_game_ : used to track when loaded game name changes
-   */
-//  std::unordered_map<GameState, Renderer*> render_engines_;
-//  Renderer* current_render_engine_;
-//  GameState current_game_state_;
-  std::string previous_loaded_game_;
 
   /**
    * @music_player_ : Cinder objects able to play audio files

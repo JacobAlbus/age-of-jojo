@@ -1,22 +1,23 @@
 #include "engine/ai_controller.h"
+#include <cstdlib>
+#include <random>
 
 namespace age_of_jojo {
 
-AIController::AIController() : enemy_score_(0) {
-
+AIController::AIController() : timer_(ci::Timer()) {
+  timer_.start();
 }
 
 ControllerAction AIController::CalculateCurrentAction(const GameState& current_state) {
-  enemy_score_ = 1;
-//  for (const Unit& enemy_unit : current_state.GetJojoUnits()) {
-//    enemy_score_ += 0;
-//  }
+  if (timer_.getSeconds() > 5.0) {
+    std::default_random_engine e((unsigned int)time(nullptr));
+    int i = e() % 3;
 
-  if (enemy_score_ % 100 == 0) {
-    enemy_score_ += 20;
-    return ControllerAction::kSendInfantry;
+    timer_.stop();
+    timer_.start();
+    return static_cast<ControllerAction>(i);
   } else {
-    return ControllerAction::kIdle;
+    return kIdle;
   }
 }
 

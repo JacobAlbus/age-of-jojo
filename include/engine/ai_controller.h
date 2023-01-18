@@ -12,8 +12,10 @@ class AIController : public BaseController {
 
   ControllerAction CalculateCurrentAction(const GameState& current_state) override;
 
+  inline double GetTimerSeconds() const override { return timer_.getSeconds(); };
+
  private:
-  int enemy_score_;
+  ci::Timer timer_;
 };
 
 }
