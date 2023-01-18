@@ -160,6 +160,8 @@ class GameState {
 
  private:
 
+  void PlayDeathSound() const;
+
   void UpgradeBaseHealth(bool is_team_jojo);
 
   bool CheckEnemeyInRange(const Unit& unit, const glm::vec2& top_right_corner, const ci::Rectf& entity_hitbox) const;
@@ -167,6 +169,8 @@ class GameState {
   bool CheckAlliedCollision(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
 
   bool CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
+
+  ci::audio::VoiceRef death_sound_;
 
   std::vector<std::pair<Unit, int>> jojo_units_;
   std::vector<Unit> jojo_unit_queue_;

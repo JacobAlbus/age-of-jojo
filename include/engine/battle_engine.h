@@ -55,12 +55,16 @@ class BattleEngine {
 
   void RestartGame();
 
+  void RenderUnitCost(const glm::vec2& mouse_pos) const;
+
  private:
   /**
    * Update positions of players
    * @param top_right_corner coordinates of top right corner of map
    */
   void UpdateUnitPositions(const glm::vec2& top_right_corner);
+
+  static bool IsMouseInsideImage(const ci::Rectf& image_hitbox, const glm::vec2& mouse_pos);
 
   bool CannotBuildUnit(ControllerAction player_action, bool is_team_jojo) const;
 

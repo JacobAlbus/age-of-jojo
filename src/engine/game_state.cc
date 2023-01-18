@@ -11,6 +11,10 @@ GameState::GameState() : jojo_health_(player_values::kAge1Health_),
                          dio_money_(player_values::kStartingMoney_),
                          dio_era_(kPart1) {
   mouse_event_.setPos(game_values::kForbiddenMousePos_);
+
+  ci::audio::SourceFileRef death_sound_source = ci::audio::load(ci::app::loadAsset("audio/death.mp3"));
+  death_sound_ = ci::audio::Voice::create(death_sound_source);
+  death_sound_->setVolume(0.3f);
 }
 
 void GameState::HandleMouseClick(const ci::app::MouseEvent& event) {
@@ -147,9 +151,9 @@ void GameState::RemoveDeadUnits() {
       alive_jojo_units.emplace_back(alive_unit);
     } else {
       jojo_experience_ += (int) ((float) pair.first.GetCost() * 0.5f);
-      dio_experience_ += pair.first.GetCost();
+      dio_experience_ += (int) ((float) pair.first.GetCost() * 2.0f);
       dio_money_ += (int) ((float) pair.first.GetCost() * 1.5f);
-      pair.first.PlayDeathSound();
+      PlayDeathSound();
     }
   }
 
@@ -160,9 +164,9 @@ void GameState::RemoveDeadUnits() {
       alive_dio_units.emplace_back(alive_unit);
     } else {
       dio_experience_ += (int) ((float) pair.first.GetCost() * 0.5f);
-      jojo_experience_ += (int) ((float) pair.first.GetCost() * 1.5f);
-      jojo_money_ += pair.first.GetCost();
-      pair.first.PlayDeathSound();
+      jojo_experience_ += (int) ((float) pair.first.GetCost() * 2.0f);
+      jojo_money_ += (int) ((float) pair.first.GetCost() * 1.5f);
+      PlayDeathSound();
     }
   }
 
@@ -172,6 +176,8 @@ void GameState::RemoveDeadUnits() {
 
 void GameState::UpdateCanUnitAttack(const glm::vec2 &top_right_corner,
                                     const ci::Rectf& jojo_base_coords, const ci::Rectf& dio_base_coords) {
+
+
   for (auto& pair : jojo_units_) {
     if (CheckEnemyCollision(pair.first, top_right_corner) ||
         pair.first.CheckCollision(dio_base_coords, top_right_corner)) {
@@ -198,7 +204,6 @@ void GameState::UpdateCanUnitAttack(const glm::vec2 &top_right_corner,
 
 bool GameState::CheckEnemeyInRange(const Unit &unit, const glm::vec2 &top_right_corner,
                                    const ci::Rectf& entity_hitbox) const {
-
   ci::Rectf enemy_hitbox;
   if (unit.IsTeamJojo() && !dio_units_.empty()) {
     enemy_hitbox = dio_units_[0].first.GetRectHitbox(top_right_corner);
@@ -292,6 +297,10 @@ bool GameState::CheckAlliedCollision(const std::pair<Unit, int>& unit_pair,
 bool GameState::CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const {
   return CheckEnemyCollision(unit_pair.first, top_right_corner) ||
          CheckAlliedCollision(unit_pair, top_right_corner);
+}
+
+void GameState::PlayDeathSound() const {
+  death_sound_->start();
 }
 
 }

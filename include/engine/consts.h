@@ -86,14 +86,14 @@ static std::unordered_map<Era, float> GetEraHealth() {
 static std::unordered_map<Era, int> GetRequiredExperience() {
   std::unordered_map<Era, int> required_experience;
 
-//  required_experience.insert(std::make_pair(kPart1, 4000));
-//  required_experience.insert(std::make_pair(kPart2, 14000));
-//  required_experience.insert(std::make_pair(kPart3, 45000));
-//  required_experience.insert(std::make_pair(kPart4, 200000));
-  required_experience.insert(std::make_pair(kPart1, 100));
-  required_experience.insert(std::make_pair(kPart2, 300));
-  required_experience.insert(std::make_pair(kPart3, 1000));
-  required_experience.insert(std::make_pair(kPart4, 3000));
+  required_experience.insert(std::make_pair(kPart1, 4000));
+  required_experience.insert(std::make_pair(kPart2, 14000));
+  required_experience.insert(std::make_pair(kPart3, 45000));
+  required_experience.insert(std::make_pair(kPart4, 200000));
+//  required_experience.insert(std::make_pair(kPart1, 100));
+//  required_experience.insert(std::make_pair(kPart2, 300));
+//  required_experience.insert(std::make_pair(kPart3, 1000));
+//  required_experience.insert(std::make_pair(kPart4, 3000));
 
   return required_experience;
 }

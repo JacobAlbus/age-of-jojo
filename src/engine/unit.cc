@@ -20,8 +20,6 @@ Unit::Unit(UnitType unit_type,
   std::unordered_map<Era, std::unordered_map<UnitType, float>> unit_attack_power = unit_values::GetUnitAttackPower();
   std::unordered_map<Era, std::unordered_map<UnitType, float>> unit_deployment_time = unit_values::GetUnitDeploymentTime();
 
-  ci::audio::SourceFileRef attack_sound_source = ci::audio::load(ci::app::loadAsset("audio/attacks/bang.mp3"));
-
   switch(unit_type) {
     case UnitType::Infantry:
       attack_speed_ = 0.8f;
@@ -47,7 +45,7 @@ Unit::Unit(UnitType unit_type,
       break;
   }
 
-  ci::audio::SourceFileRef death_sound_source = ci::audio::load(ci::app::loadAsset("audio/death.mp3"));
+  ci::audio::SourceFileRef attack_sound_source = ci::audio::load(ci::app::loadAsset("audio/attacks/bang.mp3"));
 
   health_ = unit_health.at(unit_era).at(unit_type);
   attack_power_ = unit_attack_power.at(unit_era).at(unit_type);
@@ -55,20 +53,37 @@ Unit::Unit(UnitType unit_type,
   deployment_time_ = unit_deployment_time.at(unit_era).at(unit_type);
   ranged_attack_speed_ = 0.8f;
 
-  death_sound_ = ci::audio::Voice::create(death_sound_source);
   attack_sound_ = ci::audio::Voice::create(attack_sound_source);
-  attack_sound_->setVolume(0.5f);
+  attack_sound_->setVolume(0.2f);
   position_ = glm::vec2(starting_xcoord, styles::kWindowSize_ - unit_height_);
 }
 
 void Unit::RenderUnit(const glm::vec2& top_right_corner) const {
+//  if (is_team_jojo_) {
+//    std::stringstream message;
+//    message << attack_timer_.getSeconds() << "       " << ranged_attack_timer_.getSeconds();
+//
+//    ci::gl::drawString(message.str(),
+//                       glm::vec2(300, 300),
+//                       ci::Color("pink"),
+//                       ci::Font("Helvetica", 30));
+//  } else {
+//    std::stringstream message;
+//    message << attack_timer_.getSeconds() << "       " << ranged_attack_timer_.getSeconds();
+//
+//    ci::gl::drawString(message.str(),
+//                       glm::vec2(600, 300),
+//                       ci::Color("black"),
+//                       ci::Font("Helvetica", 30));
+//  }
+
   ci::Rectf unit_hitbox = GetRectHitbox(top_right_corner);
   ci::gl::draw(sprite_, unit_hitbox);
 
   std::stringstream part;
   part << static_cast<int>(unit_era_);
   ci::gl::drawStringCentered(part.str(), unit_hitbox.getUpperRight(),
-                             ci::Color("pink"), ci::Font("Helvetica", 25));
+                             ci::Color("black"), ci::Font("Helvetica", 25));
 
   float margin = 3.0f;
 
@@ -99,7 +114,16 @@ bool Unit::CheckCollision(const ci::Rectf& entity, const glm::vec2& top_right_co
 bool Unit::CheckInRange(const ci::Rectf &entity,
                         const glm::vec2 &top_right_corner) const {
   ci::Rectf unit_hitbox = GetRectHitbox(top_right_corner);
-  return (unit_hitbox.getX1() <= entity.getX2() && (unit_hitbox.getX2() +  attack_range_) >= entity.getX1() &&
+  float x1_range = unit_hitbox.getX1();
+  float x2_range = unit_hitbox.getX2();
+
+  if (is_team_jojo_) {
+    x2_range += attack_range_;
+  } else {
+    x1_range -= attack_range_;
+  }
+
+  return (x1_range <= entity.getX2() && x2_range >= entity.getX1() &&
           unit_hitbox.getY1() <= entity.getY2() && unit_hitbox.getY2() >= entity.getY1());
 }
 
@@ -186,10 +210,6 @@ void Unit::UpdateHealth(float attack_damage) {
 
 void Unit::PlayAttackSound() const {
   attack_sound_->start();
-}
-
-void Unit::PlayDeathSound() const {
-  death_sound_->start();
 }
 
 float Unit::GetMaxHealth() const {

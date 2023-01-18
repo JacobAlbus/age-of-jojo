@@ -12,7 +12,6 @@ AgeOfJojo::AgeOfJojo() : battle_engine_(BattleEngine()), game_mode_(GameMode::kP
   kSongNames_.emplace_back("audio/music/pillar_men_theme.mp3");
   kSongNames_.emplace_back("audio/music/main_theme.mp3");
   PlayMusic("audio/blank_audio.mp3"); // needed for initialization
-  music_player_->setVolume(0.5f);
 
   ci::app::setWindowSize((int) styles::kWindowSize_, (int) styles::kWindowSize_);
   top_right_corner_ = glm::vec2(0, 0);
@@ -71,7 +70,9 @@ void AgeOfJojo::UpdateGame() {
       top_right_corner_.x > -styles::kBackgroundLength_ + styles::kWindowSize_) {
     top_right_corner_.x -= mouse_coords_.x / camera_speed;
   }
-  if (mouse_coords_.x < margin && top_right_corner_.x < 0) {
+
+  if (mouse_coords_.x < margin && top_right_corner_.x < 0 &&
+      mouse_coords_.y > game_values::kUpgradeButtonPos_.getY2()) {
     top_right_corner_.x += (styles::kWindowSize_ - mouse_coords_.x) / camera_speed;
   }
 
@@ -125,6 +126,7 @@ void AgeOfJojo::DrawGame() {
   battle_engine_.RenderBases(top_right_corner_);
   battle_engine_.RenderPlayer1HUD();
   battle_engine_.RenderPlayer1Queue(top_right_corner_);
+  battle_engine_.RenderUnitCost(mouse_coords_);
 }
 
 void AgeOfJojo::mouseMove(ci::app::MouseEvent event) {
@@ -166,6 +168,7 @@ void AgeOfJojo::PlaySound(const std::string& file_path) {
 void AgeOfJojo::PlayMusic(const std::string& file_path) {
   ci::audio::SourceFileRef source = ci::audio::load(ci::app::loadAsset(file_path));
   music_player_ = ci::audio::Voice::create(source);
+  music_player_->setVolume(0.45f);
   music_player_->start();
 }
 

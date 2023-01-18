@@ -110,7 +110,17 @@ void BattleEngine::HandlePlayer1Input(const glm::vec2& top_right_corner) {
 }
 
 void BattleEngine::HandleKeyDown(const ci::app::KeyEvent& event, const glm::vec2& top_right_corner) {
-  game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
+  switch (event.getCode()) {
+    case ci::app::KeyEvent::KEY_i:
+      game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
+      break;
+    case ci::app::KeyEvent::KEY_s:
+      game_state_.AddDioUnit(UnitType::Slinger, top_right_corner);
+      break;
+    case ci::app::KeyEvent::KEY_h:
+      game_state_.AddDioUnit(UnitType::Heavy, top_right_corner);
+      break;
+  }
 //  game_state_.UpdateDioMoney(-15);
 }
 
@@ -201,6 +211,31 @@ GameMode BattleEngine::GetGameMode() const {
   }
 }
 
+
+bool BattleEngine::IsMouseInsideImage(const ci::Rectf& image_hitbox, const glm::vec2& mouse_pos) {
+  return (mouse_pos.x > image_hitbox.getX1() && mouse_pos.x < image_hitbox.getX2() &&
+          mouse_pos.y > image_hitbox.getY1() && mouse_pos.y < image_hitbox.getY2());
+}
+
+void BattleEngine::RenderUnitCost(const glm::vec2& mouse_pos) const {
+  glm::vec2 render_position(styles::kWindowSize_ / 2.5f, game_values::kQueueSlotSize_);
+  std::stringstream message;
+  message << "Cost: ";
+
+  if (IsMouseInsideImage(game_values::kInfantryButtonPos_, mouse_pos)) {
+    message << kUnitCosts_.at(game_state_.GetJojoEra()).at(Infantry);
+  } else if (IsMouseInsideImage(game_values::kSlingerButtonPos_, mouse_pos)) {
+    message << kUnitCosts_.at(game_state_.GetJojoEra()).at(Slinger);
+  } else if (IsMouseInsideImage(game_values::kHeavyButtonPos_, mouse_pos)) {
+    message << kUnitCosts_.at(game_state_.GetJojoEra()).at(Heavy);
+  }
+
+  ci::gl::drawString(message.str(),
+                     render_position,
+                     ci::Color("black"),
+                     ci::Font("Helvetica", 30));
+}
+
 void BattleEngine::RenderBases(const glm::vec2& top_right_corner) const {
   // Draw Jojo health bar
   const ci::Rectf kJojoBaseCoords(top_right_corner.x,
@@ -220,7 +255,7 @@ void BattleEngine::RenderBases(const glm::vec2& top_right_corner) const {
   std::stringstream jojo_health;
   jojo_health << game_state_.GetJojoHealth();
   ci::gl::drawStringCentered(jojo_health.str(), kJojoBaseCoords.getUpperRight(),
-                             ci::Color("pink"), ci::Font("Helvetica", 35));
+                             ci::Color("black"), ci::Font("Helvetica", 35));
 
   // Draw Dio health bar
   const ci::Rectf kDioBaseCoords(styles::kBackgroundLength_ - styles::kBaseLength_ + top_right_corner.x,
@@ -241,7 +276,7 @@ void BattleEngine::RenderBases(const glm::vec2& top_right_corner) const {
   std::stringstream dio_health;
   dio_health << game_state_.GetDioHealth();
   ci::gl::drawStringCentered(dio_health.str(), kDioBaseCoords.getUpperLeft(),
-                             ci::Color("pink"), ci::Font("Helvetica", 35));
+                             ci::Color("black"), ci::Font("Helvetica", 35));
 }
 
 void BattleEngine::RenderPlayer1HUD() const {
@@ -263,7 +298,7 @@ void BattleEngine::RenderPlayer1HUD() const {
   std::string money(money_stream.str());
   ci::gl::drawString(money,
                      glm::vec2(30, 240),
-                     ci::Color("pink"),
+                     ci::Color("black"),
                      ci::Font("Helvetica", 30));
 
   std::ostringstream experience_stream;
@@ -271,7 +306,7 @@ void BattleEngine::RenderPlayer1HUD() const {
   std::string experience(experience_stream.str());
   ci::gl::drawString(experience,
                      glm::vec2(30, 260),
-                     ci::Color("pink"),
+                     ci::Color("black"),
                      ci::Font("Helvetica", 30));
 }
 

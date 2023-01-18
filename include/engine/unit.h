@@ -104,8 +104,6 @@ class Unit {
 
   void PlayAttackSound() const;
 
-  void PlayDeathSound() const;
-
   bool IsDeploymentReady();
 
   /**
@@ -133,7 +131,6 @@ class Unit {
   ci::Timer ranged_attack_timer_;
   ci::Timer deployment_timer_;
   ci::audio::VoiceRef attack_sound_;
-  ci::audio::VoiceRef death_sound_;
 
   bool is_team_jojo_;
   ci::gl::TextureRef sprite_;

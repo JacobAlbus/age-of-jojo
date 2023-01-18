@@ -14,7 +14,7 @@ class PlayerController : public BaseController {
   inline double GetTimerSeconds() const override { return 1.0; };
 
  private:
-  static bool IsMouseInsideImage(const ci::Rectf& image_hitbox, const glm::vec2& mouse_pos) ;
+  static bool IsMouseInsideImage(const ci::Rectf& image_hitbox, const glm::vec2& mouse_pos);
 };
 
 }
