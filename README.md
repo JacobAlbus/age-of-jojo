@@ -7,3 +7,7 @@ Based off of the hit flash game *Age of War* and with inspiration from Jojo's Bi
 ### Cinder
 
 The project was built in C++ with cmake and the open-source library (cinder)[https://libcinder.org/]. Specifically, I used the 2D graphics library inside cinder. I developed this project on Windows 10 using Visual C++ 2015 and Clion. You can setup a similar environment by downloading cinder for (Visual C++ 2015)[https://libcinder.org/download], opening and building it in Clion, then create a `my-projects` folder in the root directory. Also note that you may need to set Visual Studio as your toolchain in Clion. Regardless, an already compiled version can be downloaded and played (here)[https://drive.google.com/file/d/1LJViOPdfyQiCzAeNTDSMNe6w1YYcDtcU/view?usp=sharing] with no setup necessary.
+
+### AI
+
+Currently, the `AIController` class picks how many units to send based on how much money it has, then picks units with a 60% chance of Infantry, 30% chance of ranged slinger, and 10% chance of heavy. I plan on training an AI using deep learning techniques.
