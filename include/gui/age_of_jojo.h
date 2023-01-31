@@ -4,7 +4,7 @@
 #include "cinder/gl/gl.h"
 #include "cinder/audio/Voice.h"
 #include "engine/battle_engine.h"
-//#include "gui/renderer.h"
+#include <nlohmann/json.hpp>
 #include <unordered_map>
 
 namespace age_of_jojo {
@@ -55,6 +55,8 @@ class AgeOfJojo : public ci::app::App {
  * @param file_path path to song file
  */
   void PlaySound(const std::string& file_path);
+
+  void PauseGame(int seconds) const;
 
   void RestartGame();
 

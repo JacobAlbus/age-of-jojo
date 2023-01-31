@@ -51,9 +51,11 @@ class BaseController {
 
   inline virtual ~BaseController() = default;
 
-  virtual ControllerAction CalculateCurrentAction(const GameState& current_state) = 0;
+  virtual ControllerAction CalculateCurrentAction(const GameState& current_state, bool is_team_jojo) = 0;
 
   virtual double GetTimerSeconds() const = 0;
+
+  virtual void ResetController() = 0;
 
  private:
 

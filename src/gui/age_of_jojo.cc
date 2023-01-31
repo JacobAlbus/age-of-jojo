@@ -13,11 +13,11 @@ AgeOfJojo::AgeOfJojo() : battle_engine_(BattleEngine()), game_mode_(GameMode::kP
   kSongNames_.emplace_back("audio/music/main_theme.mp3");
   PlayMusic("audio/blank_audio.mp3"); // needed for initialization
 
-  ci::app::setWindowSize((int) styles::kWindowSize_, (int) styles::kWindowSize_);
+  ci::app::setWindowSize((int) styles::kWindowLength_, (int) styles::kWindowHeight_);
   top_right_corner_ = glm::vec2(0, 0);
   moving_ball_coords_ = glm::vec2(100, 100);
   is_moving_right_ = true;
-  mouse_coords_ = glm::vec2((int) styles::kWindowSize_ / 2, (int) styles::kWindowSize_ / 2);
+  mouse_coords_ = glm::vec2((int) styles::kWindowLength_ / 2, (int) styles::kWindowHeight_ / 2);
 
   std::string file_path = "maps/background.png";
   ci::fs::path path = ci::fs::path(file_path);
@@ -43,6 +43,9 @@ void AgeOfJojo::update() {
       break;
     case GameMode::kDioWins_:
     case GameMode::kJojoWins_:
+      int seconds = 2;
+      PauseGame(seconds);
+      RestartGame();
       return;
   }
 }
@@ -51,29 +54,19 @@ void AgeOfJojo::UpdateGame() {
   if (!music_player_->isPlaying()) {
     PlayRandomSong();
   }
-//
-//  if (!options::play_music) {
-//    music_player_->stop();
-//  }
-//
-//  if (previous_loaded_game_ != global_variables::current_loaded_game) {
-//    global_variables::has_loaded_game_changed = true;
-//    previous_loaded_game_ = global_variables::current_loaded_game;
-//  }
 
-//  current_render_engine_->Update();
   UpdateFPSBall();
 
-  float margin = styles::kWindowSize_ / 5;
+  float margin = styles::kWindowLength_ / 5;
   float camera_speed = 60.0f;
-  if (mouse_coords_.x > styles::kWindowSize_ - margin &&
-      top_right_corner_.x > -styles::kBackgroundLength_ + styles::kWindowSize_) {
+  if (mouse_coords_.x > styles::kWindowLength_ - margin &&
+      top_right_corner_.x > -styles::kBackgroundLength_ + styles::kWindowLength_) {
     top_right_corner_.x -= mouse_coords_.x / camera_speed;
   }
 
   if (mouse_coords_.x < margin && top_right_corner_.x < 0 &&
       mouse_coords_.y > game_values::kUpgradeButtonPos_.getY2()) {
-    top_right_corner_.x += (styles::kWindowSize_ - mouse_coords_.x) / camera_speed;
+    top_right_corner_.x += (styles::kWindowLength_ - mouse_coords_.x) / camera_speed;
   }
 
   battle_engine_.UpdateGameState(top_right_corner_);
@@ -102,12 +95,12 @@ void AgeOfJojo::DisplayWinScreen() {
   }
 
   ci::gl::drawStringCentered(winner,
-                             glm::vec2(styles::kWindowSize_ / 2, styles::kWindowSize_ / 2),
+                             glm::vec2(styles::kWindowLength_ / 2, styles::kWindowHeight_ / 2),
                              ci::Color("pink"),
                              ci::Font("Helvetica", 60));
 
   ci::gl::drawStringCentered("Press Any Key to Restart",
-                             glm::vec2(styles::kWindowSize_ / 2, styles::kWindowSize_ / 1.5),
+                             glm::vec2(styles::kWindowLength_ / 2, styles::kWindowHeight_ / 1.5),
                              ci::Color("pink"),
                              ci::Font("Helvetica", 30));
 }
@@ -134,8 +127,8 @@ void AgeOfJojo::mouseMove(ci::app::MouseEvent event) {
 
   float margin_of_error = 3; // to avoid divide by 0 errors
 
-  if (mouse_coords_.x >= styles::kWindowSize_ - margin_of_error) {
-    mouse_coords_.x = styles::kWindowSize_ - margin_of_error;
+  if (mouse_coords_.x >= styles::kWindowLength_ - margin_of_error) {
+    mouse_coords_.x = styles::kWindowLength_ - margin_of_error;
   } else if (mouse_coords_.x <= margin_of_error) {
     mouse_coords_.x = margin_of_error;
   }
@@ -181,6 +174,13 @@ void AgeOfJojo::PlayRandomSong() {
 
   std::string file_path = kSongNames_[random_index];
   PlayMusic(file_path);
+}
+
+void AgeOfJojo::PauseGame(int seconds) const {
+  ci::Timer timer;
+  timer.start();
+  while (timer.getSeconds() < seconds) {}
+  timer.stop();
 }
 
 void AgeOfJojo::UpdateFPSBall() {

@@ -3,7 +3,7 @@
 
 namespace age_of_jojo {
 
-ControllerAction PlayerController::CalculateCurrentAction(const GameState& current_state) {
+ControllerAction PlayerController::CalculateCurrentAction(const GameState& current_state, bool is_team_jojo) {
   glm::vec2 mouse_pos = current_state.GetMouse().getPos();
 
   if (mouse_pos == game_values::kForbiddenMousePos_) {

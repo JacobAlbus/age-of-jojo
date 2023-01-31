@@ -2,16 +2,27 @@
 #include "engine/player_controller.h"
 #include "engine/ai_controller.h"
 #include "engine/consts.h"
+#include <chrono>
+#include <thread>
 
 namespace age_of_jojo {
 
 BattleEngine::BattleEngine() : game_state_(GameState()),
-                               player1_controller_(new PlayerController()),
+                               player1_controller_(new AIController()),
                                player2_controller_(new AIController()),
-                               kUnitCosts_(unit_values::GetUnitCosts()) {
+                               kUnitCosts_(unit_values::GetUnitCosts()),
+                               jojo_wins_(0),
+                               dio_wins_(0),
+                               game_mode_(GameMode::kPlaying_) {
+
+  write_state_timer_.start();
 
   std::vector<std::string> names = {"infantry", "slinger", "heavy", "add_turret", "sell_turret",
                                     "upgrade", "small_turret", "medium_turret", "large_turret"};
+
+  auto lambert = ci::gl::ShaderDef().lambert().color();
+  ci::gl::GlslProgRef shader = ci::gl::getStockShader( lambert );
+  unit_health_bar_ = ci::gl::Batch::create(ci::geom::Rect(), shader);
 
   for (const auto& name : names) {
     std::string file_path = "unit image/";
@@ -22,41 +33,11 @@ BattleEngine::BattleEngine() : game_state_(GameState()),
   }
 }
 
-BattleEngine::~BattleEngine() {
-  delete player1_controller_;
-  delete player2_controller_;
-}
-
-BattleEngine::BattleEngine(const BattleEngine &src) : kUnitCosts_(unit_values::GetUnitCosts()) {
-  this->game_state_ = src.game_state_;
-  BaseController* new_player1 = new PlayerController();
-  BaseController* new_player2 = new AIController();
-  delete player1_controller_;
-  delete player2_controller_;
-  this->player1_controller_ = new_player1;
-  this->player2_controller_ = new_player2;
-  this->hud_images_ = src.hud_images_;
-}
-
-BattleEngine& BattleEngine::operator=(const BattleEngine& rhs) {
-  if (this == &rhs) {
-    return *this;
-  }
-
-  this->game_state_ = rhs.game_state_;
-  BaseController* new_player1 = new PlayerController();
-  BaseController* new_player2 = new AIController();
-  delete player1_controller_;
-  delete player2_controller_;
-  this->player1_controller_ = new_player1;
-  this->player2_controller_ = new_player2;
-  this->hud_images_ = rhs.hud_images_;
-
-  return *this;
-}
-
 void BattleEngine::RestartGame() {
   game_state_ = GameState();
+  game_mode_ = GameMode::kPlaying_;
+  player1_controller_->ResetController();
+  player2_controller_->ResetController();
 }
 
 void BattleEngine::UpdateGameState(const glm::vec2& top_right_corner) {
@@ -81,12 +62,23 @@ void BattleEngine::UpdateGameState(const glm::vec2& top_right_corner) {
   UpdateUnitsHealth(top_right_corner);
 
   game_state_.ResetMouse(); // Must be at end
+  UpdateGameMode();
+
+  if (write_state_timer_.getSeconds() > 1.0) {
+    std::stringstream file_path;
+    file_path << "../../../replay_memory/speed" << (int) styles::kGameSpeed_ << "/game1.json";
+    game_state_.WriteStateToJSON(file_path.str());
+
+    write_state_timer_.stop();
+    write_state_timer_.start();
+  }
 }
 
 void BattleEngine::HandlePlayer1Input(const glm::vec2& top_right_corner) {
-  ControllerAction player1_action = player1_controller_->CalculateCurrentAction(game_state_);
+  bool is_team_jojo = true;
+  ControllerAction player1_action = player1_controller_->CalculateCurrentAction(game_state_, is_team_jojo);
 
-  if (CannotBuildUnit(player1_action, true)) {
+  if (CannotBuildUnit(player1_action, is_team_jojo)) {
     return;
   }
 
@@ -104,46 +96,48 @@ void BattleEngine::HandlePlayer1Input(const glm::vec2& top_right_corner) {
       game_state_.UpdateJojoMoney(-kUnitCosts_.at(game_state_.GetJojoEra()).at(Heavy));
       break;
     case ControllerAction::kUpgrade:
-      bool is_team_jojo = true;
       game_state_.UpgradeEra(is_team_jojo);
   }
 }
 
 void BattleEngine::HandleKeyDown(const ci::app::KeyEvent& event, const glm::vec2& top_right_corner) {
-  switch (event.getCode()) {
-    case ci::app::KeyEvent::KEY_i:
-      game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
-      break;
-    case ci::app::KeyEvent::KEY_s:
-      game_state_.AddDioUnit(UnitType::Slinger, top_right_corner);
-      break;
-    case ci::app::KeyEvent::KEY_h:
-      game_state_.AddDioUnit(UnitType::Heavy, top_right_corner);
-      break;
-  }
-//  game_state_.UpdateDioMoney(-15);
+//  switch (event.getCode()) {
+//    case ci::app::KeyEvent::KEY_i:
+//      game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
+//      break;
+//    case ci::app::KeyEvent::KEY_s:
+//      game_state_.AddDioUnit(UnitType::Slinger, top_right_corner);
+//      break;
+//    case ci::app::KeyEvent::KEY_h:
+//      game_state_.AddDioUnit(UnitType::Heavy, top_right_corner);
+//      break;
+//  }
 }
 
 void BattleEngine::HandlePlayer2Input(const glm::vec2& top_right_corner) {
-//  ControllerAction player2_action = player2_controller_->CalculateCurrentAction(game_state_);
-//  if (CannotBuildUnit(player2_action, false)) {
-//    return;
-//  }
-//  switch (player2_action) {
-//    case ControllerAction::kSendInfantry:
-//      game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
-//      game_state_.UpdateDioMoney(-15);
-//      break;
-//    case ControllerAction::kSendSlinger:
-//      game_state_.AddDioUnit(UnitType::Slinger, top_right_corner);
-//      game_state_.UpdateDioMoney(-25);
-//      break;
-//    case ControllerAction::kSendHeavy:
-//      game_state_.AddDioUnit(UnitType::Heavy, top_right_corner);
-//      game_state_.UpdateDioMoney(-100);
-//      break;
-//
-//  }
+  bool is_team_jojo = false;
+  ControllerAction player2_action = player2_controller_->CalculateCurrentAction(game_state_, is_team_jojo);
+
+  if (CannotBuildUnit(player2_action, is_team_jojo)) {
+    return;
+  }
+
+  switch (player2_action) {
+    case ControllerAction::kSendInfantry:
+      game_state_.AddDioUnit(UnitType::Infantry, top_right_corner);
+      game_state_.UpdateDioMoney(-kUnitCosts_.at(game_state_.GetDioEra()).at(Infantry));
+      break;
+    case ControllerAction::kSendSlinger:
+      game_state_.AddDioUnit(UnitType::Slinger, top_right_corner);
+      game_state_.UpdateDioMoney(-kUnitCosts_.at(game_state_.GetDioEra()).at(Slinger));
+      break;
+    case ControllerAction::kSendHeavy:
+      game_state_.AddDioUnit(UnitType::Heavy, top_right_corner);
+      game_state_.UpdateDioMoney(-kUnitCosts_.at(game_state_.GetDioEra()).at(Heavy));
+      break;
+    case ControllerAction::kUpgrade:
+      game_state_.UpgradeEra(is_team_jojo);
+  }
 }
 
 void BattleEngine::UpdateUnitPositions(const glm::vec2& top_right_corner) {
@@ -158,6 +152,18 @@ void BattleEngine::UpdateUnitPositions(const glm::vec2& top_right_corner) {
                                  styles::kBackgroundHeight_);
 
   game_state_.UpdatePositions(top_right_corner, kJojoBaseCoords, kDioBaseCoords);
+}
+
+void BattleEngine::UpdateGameMode() {
+  if (game_state_.GetDioHealth() <= 0) {
+    game_mode_ = GameMode::kJojoWins_;
+    jojo_wins_++;
+  } else if (game_state_.GetJojoHealth() <= 0) {
+    game_mode_ = GameMode::kDioWins_;
+    dio_wins_++;
+  } else {
+    game_mode_ = GameMode::kPlaying_;
+  }
 }
 
 void BattleEngine::UpdateBaseHealth(const glm::vec2& top_right_corner) {
@@ -197,18 +203,12 @@ bool BattleEngine::CannotBuildUnit(ControllerAction player_action, bool is_team_
             kUnitCosts_.at(game_state_.GetJojoEra()).at(unit_type) > game_state_.GetJojoMoney());
   } else {
     return (game_state_.GetDioQueue().size() >= game_values::kMaxQueueLength_ ||
-            kUnitCosts_.at(game_state_.GetJojoEra()).at(unit_type) < game_state_.GetDioMoney());
+            kUnitCosts_.at(game_state_.GetDioEra()).at(unit_type) > game_state_.GetDioMoney());
   }
 }
 
 GameMode BattleEngine::GetGameMode() const {
-  if (game_state_.GetDioHealth() <= 0) {
-    return GameMode::kJojoWins_;
-  } else if (game_state_.GetJojoHealth() <= 0) {
-    return GameMode::kDioWins_;
-  } else {
-    return GameMode::kPlaying_;
-  }
+  return game_mode_;
 }
 
 
@@ -218,7 +218,7 @@ bool BattleEngine::IsMouseInsideImage(const ci::Rectf& image_hitbox, const glm::
 }
 
 void BattleEngine::RenderUnitCost(const glm::vec2& mouse_pos) const {
-  glm::vec2 render_position(styles::kWindowSize_ / 2.5f, game_values::kQueueSlotSize_);
+  glm::vec2 render_position(styles::kWindowLength_ / 2.5f, game_values::kQueueSlotSize_);
   std::stringstream message;
   message << "Cost: ";
 
@@ -257,6 +257,14 @@ void BattleEngine::RenderBases(const glm::vec2& top_right_corner) const {
   ci::gl::drawStringCentered(jojo_health.str(), kJojoBaseCoords.getUpperRight(),
                              ci::Color("black"), ci::Font("Helvetica", 35));
 
+  // Render Jojo wins
+  std::stringstream jojo_wins;
+  jojo_wins << "Wins: " << jojo_wins_;
+  glm::vec2 win_position(styles::kBaseLength_ / 2,
+                         styles::kWindowHeight_ - styles::kBaseHeight_ / 2);
+  ci::gl::drawStringCentered(jojo_wins.str(), win_position,
+                             ci::Color("black"), ci::Font("Helvetica", 35));
+
   // Draw Dio health bar
   const ci::Rectf kDioBaseCoords(styles::kBackgroundLength_ - styles::kBaseLength_ + top_right_corner.x,
                                  styles::kBackgroundHeight_ - styles::kBaseHeight_,
@@ -277,6 +285,14 @@ void BattleEngine::RenderBases(const glm::vec2& top_right_corner) const {
   dio_health << game_state_.GetDioHealth();
   ci::gl::drawStringCentered(dio_health.str(), kDioBaseCoords.getUpperLeft(),
                              ci::Color("black"), ci::Font("Helvetica", 35));
+
+  // Render Dio wins
+  std::stringstream dio_wins;
+  dio_wins << "Wins: "<< dio_wins_;
+  win_position = glm::vec2(styles::kWindowLength_ - styles::kBaseLength_,
+                           styles::kWindowHeight_ - styles::kBaseHeight_ / 2);
+  ci::gl::drawString(dio_wins.str(), win_position,
+                             ci::Color("black"), ci::Font("Helvetica", 35));
 }
 
 void BattleEngine::RenderPlayer1HUD() const {
@@ -293,21 +309,30 @@ void BattleEngine::RenderPlayer1HUD() const {
   ci::gl::draw(hud_images_.at("add_turret"), game_values::kAddTurretButtonPos_);
   ci::gl::draw(hud_images_.at("upgrade"), game_values::kUpgradeButtonPos_);
 
-  std::ostringstream money_stream;
-  money_stream << "Money: " << game_state_.GetJojoMoney();
-  std::string money(money_stream.str());
-  ci::gl::drawString(money,
+  std::ostringstream jojo_stream;
+  jojo_stream << "Jojo Money: " << game_state_.GetJojoMoney();
+  jojo_stream << "  Experience: " << game_state_.GetJojoExperience();
+  jojo_stream << "  Units: " << game_state_.GetJojoUnits().size();
+  ci::gl::drawString(jojo_stream.str(),
                      glm::vec2(30, 240),
                      ci::Color("black"),
                      ci::Font("Helvetica", 30));
 
-  std::ostringstream experience_stream;
-  experience_stream << "Experience: " << game_state_.GetJojoExperience();
-  std::string experience(experience_stream.str());
-  ci::gl::drawString(experience,
+  std::ostringstream dio_stream;
+  dio_stream << "Dio Money: " << game_state_.GetDioMoney();
+  dio_stream << "  Experience: " << game_state_.GetDioExperience();
+  dio_stream << "  Units: " << game_state_.GetDioUnits().size();
+  ci::gl::drawString(dio_stream.str(),
                      glm::vec2(30, 260),
                      ci::Color("black"),
                      ci::Font("Helvetica", 30));
+
+  std::ostringstream nib;
+  nib << write_state_timer_.getSeconds();
+  ci::gl::drawString(nib.str(),
+                     glm::vec2(1000, 200),
+                     ci::Color("black"),
+                     ci::Font("Helvetica", 50));
 }
 
 void BattleEngine::RenderPlayer1Queue(const glm::vec2 &top_right_corner) const {
@@ -333,8 +358,8 @@ void BattleEngine::RenderPlayer1Queue(const glm::vec2 &top_right_corner) const {
 
   // draw queue loading bar
   ci::gl::color(ci::Color("black"));
-  float x1 = styles::kWindowSize_ / 2.5f;
-  float x2 = styles::kWindowSize_ * (2.0f / 2.5f);
+  float x1 = styles::kWindowLength_ / 2.5f;
+  float x2 = styles::kWindowLength_ * (2.0f / 2.5f);
   float y = 2 * game_values::kQueueSlotSize_;
 
   ci::gl::drawSolidRect(ci::Rectf(x1, y,
@@ -365,17 +390,21 @@ void BattleEngine::RenderPlayer1Queue(const glm::vec2 &top_right_corner) const {
 void BattleEngine::RenderAllUnits(const glm::vec2& top_right_corner) const {
   for (const auto& unit_pair : game_state_.GetJojoUnits()) {
     ci::gl::color(ci::Color("white"));
-    unit_pair.first.RenderUnit(top_right_corner);
+    unit_pair.first.RenderUnit(top_right_corner, unit_health_bar_);
   }
 
   for (const auto& unit_pair : game_state_.GetDioUnits()) {
     ci::gl::color(ci::Color("white"));
-    unit_pair.first.RenderUnit(top_right_corner);
+    unit_pair.first.RenderUnit(top_right_corner, unit_health_bar_);
   }
 }
 
 float BattleEngine::GetMaxBaseHealth(Era era) const {
   return player_values::GetEraHealth().at(era);
+}
+
+size_t BattleEngine::GetPlayedGamesCount() {
+  return 0;
 }
 
 

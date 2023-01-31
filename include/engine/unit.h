@@ -8,6 +8,7 @@
 #include "cinder/Timer.h"
 #include "engine/consts.h"
 #include "cinder/audio/Voice.h"
+#include "nlohmann/json.hpp"
 
 namespace age_of_jojo {
 
@@ -18,7 +19,7 @@ class Unit {
   /**
    * Renders unit
    */
-  void RenderUnit(const glm::vec2& top_right_corner) const;
+  void RenderUnit(const glm::vec2& top_right_corner, const ci::gl::BatchRef health_bar) const;
 
   /**
    * Updates position of unit
@@ -41,6 +42,8 @@ class Unit {
    * Whether or not unit belongs to team Jojo
    */
   inline bool IsTeamJojo() const { return is_team_jojo_; };
+
+  inline UnitType GetUnitType() const { return unit_type_; };
 
   /**
    * How much it costs to produce unit
@@ -69,6 +72,8 @@ class Unit {
    * @return whether or not the unit is hitting the entity
    */
   bool CheckInRange(const ci::Rectf& entity, const glm::vec2& top_right_corner) const;
+
+  float DistnaceToEntity(const ci::Rectf& entity, const glm::vec2& top_right_corner) const;
 
   /**
    * Checks if unit can attack based on timer
@@ -118,6 +123,8 @@ class Unit {
 
   void StartDeploymentTimer();
 
+  nlohmann::json GetJSON() const;
+
  private:
 
 
@@ -139,7 +146,6 @@ class Unit {
   float deployment_time_;
   float attack_range_;
   float ranged_attack_speed_;
-  size_t ranged_attack_power_;
   size_t cost_;
   float attack_speed_;
   float unit_width_;
@@ -147,6 +153,9 @@ class Unit {
   UnitType unit_type_;
   Era unit_era_;
   glm::vec2 position_;
+
+  double attack_time_;
+  double ranged_attack_time_;
 };
 
 }

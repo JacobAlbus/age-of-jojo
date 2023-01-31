@@ -1,0 +1,35 @@
+{
+  "dio_era": 0,
+  "dio_experience": 0,
+  "dio_health": 500.0,
+  "dio_money": 95,
+  "dio_unit_queue": [],
+  "dio_units": null,
+  "jojo_era": 0,
+  "jojo_experience": 0,
+  "jojo_health": 500.0,
+  "jojo_money": 95,
+  "jojo_unit_queue": [],
+  "jojo_units": {
+    "0": {
+      "era": 0,
+      "health": 9.0,
+      "unit_type": 1
+    },
+    "1": {
+      "era": 0,
+      "health": 15.0,
+      "unit_type": 1
+    },
+    "2": {
+      "era": 0,
+      "health": 20.0,
+      "unit_type": 0
+    },
+    "3": {
+      "era": 0,
+      "health": 20.0,
+      "unit_type": 0
+    }
+  }
+}

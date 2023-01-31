@@ -1,5 +1,7 @@
 #include "engine/game_state.h"
 #include "engine/consts.h"
+#include "nlohmann/json.hpp"
+#include <sstream>
 
 namespace age_of_jojo {
 
@@ -9,6 +11,7 @@ GameState::GameState() : jojo_health_(player_values::kAge1Health_),
                          jojo_era_(kPart1),
                          dio_health_(player_values::kAge1Health_),
                          dio_money_(player_values::kStartingMoney_),
+                         dio_experience_(0),
                          dio_era_(kPart1) {
   mouse_event_.setPos(game_values::kForbiddenMousePos_);
 
@@ -61,14 +64,13 @@ void GameState::UpdateUnitQueue() {
 
 void GameState::UpdatePositions(const glm::vec2& top_right_corner,
                                 const ci::Rectf& jojo_base_coords, const ci::Rectf& dio_base_coords) {
-  float unit_speed = 1.0f;
-
   for (auto& pair : jojo_units_) {
     if (pair.first.CheckCollision(dio_base_coords, top_right_corner) ||
         CheckUnitCollisions(pair, top_right_corner)) {
       continue;
     }
-    pair.first.UpdatePosition(unit_speed);
+    float movement_speed = CalculateMovementAvailbale(pair, dio_base_coords, top_right_corner);
+    pair.first.UpdatePosition(movement_speed);
   }
 
   for (auto& pair : dio_units_) {
@@ -76,8 +78,43 @@ void GameState::UpdatePositions(const glm::vec2& top_right_corner,
         CheckUnitCollisions(pair, top_right_corner)) {
       continue;
     }
-    pair.first.UpdatePosition(unit_speed);
+    float movement_speed = CalculateMovementAvailbale(pair, jojo_base_coords, top_right_corner);
+    pair.first.UpdatePosition(movement_speed);
   }
+}
+
+float GameState::CalculateMovementAvailbale(const std::pair<Unit, int>& pair,
+                                            const ci::Rectf& base_coords,
+                                            const glm::vec2& top_right_corner) const {
+
+  size_t unit_index = pair.second;
+  float distance_to_target = pair.first.DistnaceToEntity(base_coords, top_right_corner);
+
+  if (pair.first.IsTeamJojo()) {
+    if (!dio_units_.empty()) {
+      ci::Rectf dio_unit_hitbox = dio_units_[0].first.GetRectHitbox(top_right_corner);
+      distance_to_target = std::min(distance_to_target,
+                                    pair.first.DistnaceToEntity(dio_unit_hitbox, top_right_corner));
+    }
+    if (unit_index > 0) {
+      ci::Rectf jojo_unit_hitbox = jojo_units_[unit_index - 1].first.GetRectHitbox(top_right_corner);
+      distance_to_target = std::min(distance_to_target,
+                                    pair.first.DistnaceToEntity(jojo_unit_hitbox, top_right_corner));
+    }
+  } else {
+    if (!jojo_units_.empty()) {
+      ci::Rectf jojo_unit_hitbox = jojo_units_[0].first.GetRectHitbox(top_right_corner);
+      distance_to_target = std::min(distance_to_target,
+                                    pair.first.DistnaceToEntity(jojo_unit_hitbox, top_right_corner));
+    }
+    if (unit_index > 0) {
+      ci::Rectf dio_unit_hitbox = dio_units_[unit_index - 1].first.GetRectHitbox(top_right_corner);
+      distance_to_target = std::min(distance_to_target,
+                                    pair.first.DistnaceToEntity(dio_unit_hitbox, top_right_corner));
+    }
+  }
+
+  return std::min(distance_to_target, unit_values::kUnitSpeed_);
 }
 
 void GameState::UpdateBaseHealth(const glm::vec2& top_right_corner) {
@@ -120,22 +157,22 @@ void GameState::UpdateBaseHealth(const glm::vec2& top_right_corner) {
 
 void GameState::UpdateUnitsHealth(const glm::vec2& top_right_corner) {
 
-  for (auto& unit_pair : jojo_units_) {
+  for (auto& unit_pair : dio_units_) {
     Unit& unit = unit_pair.first;
 
-    if (unit.CanAttack() && !dio_units_.empty()) {
-      dio_units_[0].first.UpdateHealth(unit.GetAttackPower());
+    if (unit.CanAttack() && !jojo_units_.empty()) {
+      jojo_units_[0].first.UpdateHealth(unit.GetAttackPower());
       unit.StopTimer();
       unit.StopRangeAttackTimer();
       unit.PlayAttackSound();
     }
   }
 
-  for (auto& unit_pair : dio_units_) {
+  for (auto& unit_pair : jojo_units_) {
     Unit& unit = unit_pair.first;
 
-    if (unit.CanAttack() && !jojo_units_.empty()) {
-      jojo_units_[0].first.UpdateHealth(unit.GetAttackPower());
+    if (unit.CanAttack() && !dio_units_.empty()) {
+      dio_units_[0].first.UpdateHealth(unit.GetAttackPower());
       unit.StopTimer();
       unit.StopRangeAttackTimer();
       unit.PlayAttackSound();
@@ -176,8 +213,6 @@ void GameState::RemoveDeadUnits() {
 
 void GameState::UpdateCanUnitAttack(const glm::vec2 &top_right_corner,
                                     const ci::Rectf& jojo_base_coords, const ci::Rectf& dio_base_coords) {
-
-
   for (auto& pair : jojo_units_) {
     if (CheckEnemyCollision(pair.first, top_right_corner) ||
         pair.first.CheckCollision(dio_base_coords, top_right_corner)) {
@@ -187,6 +222,7 @@ void GameState::UpdateCanUnitAttack(const glm::vec2 &top_right_corner,
       pair.first.ContinueRangeAttackTimer();
     } else {
       pair.first.StopTimer();
+      pair.first.StopRangeAttackTimer();
     }
   }
 
@@ -198,6 +234,7 @@ void GameState::UpdateCanUnitAttack(const glm::vec2 &top_right_corner,
       pair.first.ContinueRangeAttackTimer();
     } else {
       pair.first.StopTimer();
+      pair.first.StopRangeAttackTimer();
     }
   }
 }
@@ -238,9 +275,7 @@ void GameState::UpgradeEra(bool is_team_jojo) {
     dio_era_ = static_cast<Era>(era_numeric);
   }
 
-  dio_era_ = jojo_era_;
-  UpgradeBaseHealth(true);
-  UpgradeBaseHealth(false);
+  UpgradeBaseHealth(is_team_jojo);
 }
 
 void GameState::UpgradeBaseHealth(bool is_team_jojo) {
@@ -300,7 +335,60 @@ bool GameState::CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const
 }
 
 void GameState::PlayDeathSound() const {
-  death_sound_->start();
+//  death_sound_->start();
+}
+
+void GameState::WriteStateToJSON(const std::string& file_path) const {
+  nlohmann::json state;
+
+  nlohmann::json jojo_units_json;
+  for (size_t index = 0; index < jojo_units_.size(); index++) {
+    std::stringstream unit_string;
+    unit_string << index;
+    jojo_units_json[unit_string.str()] = jojo_units_[index].first.GetJSON();
+  }
+
+  std::vector<size_t> jojo_unit_queue;
+  for (const auto& unit : jojo_unit_queue_) {
+    auto unit_type = static_cast<size_t>(unit.GetUnitType());
+    jojo_unit_queue.emplace_back(unit_type);
+  }
+  state["jojo_unit_queue"] = jojo_unit_queue;
+  state["jojo_units"] = jojo_units_json;
+  state["jojo_health"] = jojo_health_;
+  state["jojo_money"] = jojo_money_;
+  state["jojo_experience"] = jojo_experience_;
+  state["jojo_era"] = jojo_era_;
+
+  nlohmann::json dio_units_json;
+  for (size_t index = 0; index < dio_units_.size(); index++) {
+    std::stringstream unit_string;
+    unit_string << index;
+    jojo_units_json[unit_string.str()] = dio_units_[index].first.GetJSON();
+  }
+
+  std::vector<size_t> dio_unit_queue;
+  for (const auto& unit : dio_unit_queue_) {
+    auto unit_type = static_cast<size_t>(unit.GetUnitType());
+    dio_unit_queue.emplace_back(unit_type);
+  }
+  state["dio_unit_queue"] = dio_unit_queue;
+  state["dio_units"] = dio_units_json;
+  state["dio_health"] = dio_health_;
+  state["dio_money"] = dio_money_;
+  state["dio_experience"] = dio_experience_;
+  state["dio_era"] = dio_era_;
+
+//  std::ofstream output(file_path, std::ios_base::app);
+  std::ofstream output;
+  output.open(file_path);
+  output << std::setw(2) << state << std::endl;
+  output.close();
+//  size_t size = 1024;
+//  char* buffer = new char[size];
+//  output.write(buffer, size);
+//
+//  delete[] buffer;
 }
 
 }

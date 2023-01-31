@@ -9,7 +9,7 @@ namespace age_of_jojo {
 class PlayerController : public BaseController {
  public:
 
-  ControllerAction CalculateCurrentAction(const GameState& current_state) override;
+  ControllerAction CalculateCurrentAction(const GameState& current_state, bool is_team_jojo) override;
 
   inline double GetTimerSeconds() const override { return 1.0; };
 

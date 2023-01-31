@@ -27,10 +27,15 @@ namespace styles {
   const float kBaseHeight_ = 415;
   const float kBackgroundLength_ = 2000;
   const float kBackgroundHeight_ = 900;
-  const float kWindowSize_ = 900;
+  const float kWindowHeight_ = 900;
+  const float kWindowLength_ = 2000;
+  const float kGameSpeed_ = 10.0f;
 }
 
 namespace unit_values {
+  const float kUnitSpeed_ = 1.0f * styles::kGameSpeed_;
+  const float kAttackSpeed_ = 0.8f / styles::kGameSpeed_;
+
   const float kInfantryWidth_ = 50;
   const float kInfantryHeight_ = 100;
   const float kHeavyWidth_ = 80;
@@ -90,10 +95,7 @@ static std::unordered_map<Era, int> GetRequiredExperience() {
   required_experience.insert(std::make_pair(kPart2, 14000));
   required_experience.insert(std::make_pair(kPart3, 45000));
   required_experience.insert(std::make_pair(kPart4, 200000));
-//  required_experience.insert(std::make_pair(kPart1, 100));
-//  required_experience.insert(std::make_pair(kPart2, 300));
-//  required_experience.insert(std::make_pair(kPart3, 1000));
-//  required_experience.insert(std::make_pair(kPart4, 3000));
+  required_experience.insert(std::make_pair(kPart5, 400000));
 
   return required_experience;
 }
@@ -119,8 +121,8 @@ namespace game_values {
 
   const int kMaxQueueLength_ = 5;
   const float kQueueSlotSize_ = 20;
-  const ci::Rectf kQueueSlot1_(styles::kWindowSize_ - (2 * kQueueSlotSize_), 2 * kQueueSlotSize_,
-                               styles::kWindowSize_ - kQueueSlotSize_, 3 * kQueueSlotSize_);
+  const ci::Rectf kQueueSlot1_(styles::kWindowLength_ - (2 * kQueueSlotSize_), 2 * kQueueSlotSize_,
+                               styles::kWindowLength_ - kQueueSlotSize_, 3 * kQueueSlotSize_);
 }
 
 namespace unit_values {

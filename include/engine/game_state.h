@@ -150,24 +150,79 @@ class GameState {
    */
   void ResetMouse();
 
+  /**
+   * @return currently stored mouse event object
+   */
   const ci::app::MouseEvent& GetMouse() const { return mouse_event_; };
 
+  /**
+   * Checks whether or not units in queue are ready for deployment.
+   * Adds to units and removes from queue if ready
+   */
   void UpdateUnitQueue();
 
+  /**
+   * Check given unit's collision with enemy
+   * @param unit unit in question
+   * @param top_right_corner top right corner of map
+   */
   bool CheckEnemyCollision(const Unit& unit, const glm::vec2& top_right_corner) const;
 
+  /**
+   * Updates era for given player
+   * @param is_team_jojo whether or not jojo or dio is upgrading
+   */
   void UpgradeEra(bool is_team_jojo);
+
+  /**
+   * Writes state of game to a json file
+   * @param file_path path to json file
+   */
+  void WriteStateToJSON(const std::string& file_path) const;
 
  private:
 
+  /**
+   * @param pair unit in question
+   * @param base_coords coordinates of enemy base
+   * @param top_right_corner top right corner of map
+   * @return How much a unit can move (in pixels) in a given frame
+   */
+  float CalculateMovementAvailbale(const std::pair<Unit, int>& pair,
+                                   const ci::Rectf& base_coords,
+                                   const glm::vec2& top_right_corner) const;
+
+  /**
+   * Plays death sound when unit dies
+   */
   void PlayDeathSound() const;
 
+  /**
+   * Upgrades base health after upgrading era
+   * @param is_team_jojo whether or not jojo or dio is upgrading
+   */
   void UpgradeBaseHealth(bool is_team_jojo);
 
+  /**
+   * @param unit unit with ranged attack
+   * @param top_right_corner top right corner of map
+   * @param entity_hitbox hitbox of thing trying to be attacked
+   * @return whether or not an enemy is in range
+   */
   bool CheckEnemeyInRange(const Unit& unit, const glm::vec2& top_right_corner, const ci::Rectf& entity_hitbox) const;
 
+  /**
+   * @param unit_pair unit in question
+   * @param top_right_corner top right corner of map
+   * @return whether or not a unit is colliding with an ally
+   */
   bool CheckAlliedCollision(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
 
+  /**
+   * @param unit_pair unit in question
+   * @param top_right_corner top right corner of map
+   * @return whether or not a unit is colliding with anything
+   */
   bool CheckUnitCollisions(const std::pair<Unit, int>& unit_pair, const glm::vec2& top_right_corner) const;
 
   ci::audio::VoiceRef death_sound_;

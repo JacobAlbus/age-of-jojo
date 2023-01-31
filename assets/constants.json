@@ -1,0 +1,25 @@
+{
+  "styles" : {
+    "kBaseLength_" : 100,
+	"kBaseHeight_" : 415,
+	"kBackgroundLength_" : 2000,
+	"kBackgroundHeight_" : 900,
+	"kWindowHeight_" : 900,
+	"kWindowLength_" : 2000
+  },
+  "player_values" : {
+	"age_health" : {
+		"kAge1Health_" : 500,
+		"kAge2Health_" : 1100,
+		"kAge3Health_" : 2000,
+		"kAge4Health_" : 3200,
+		"kAge5Health_" : 4700
+	},
+	"age_experience" : {
+		"kAge2Experience_" : 4000,
+		"kAge3Experience_" : 14000,
+		"kAge4Experience_" : 45000,
+		"kAge5Experience_" : 200000	
+	}
+  }
+}
